@@ -55,14 +55,17 @@ public final class CodeArea extends AbstractCodeArea {
 		FindUsageAction findUsage = new FindUsageAction(this);
 		GoToDeclarationAction goToDeclaration = new GoToDeclarationAction(this);
 		RenameAction rename = new RenameAction(this);
+		ShowSignatureAction showSignature = new ShowSignatureAction(this);
 
 		JPopupMenu popup = getPopupMenu();
 		popup.addSeparator();
 		popup.add(findUsage);
 		popup.add(goToDeclaration);
+		popup.add(showSignature);
 		popup.add(rename);
 		popup.addPopupMenuListener(findUsage);
 		popup.addPopupMenuListener(goToDeclaration);
+		popup.addPopupMenuListener(showSignature);
 		popup.addPopupMenuListener(rename);
 	}
 
