@@ -5,13 +5,11 @@ import jadx.api.JavaMethod;
 import jadx.core.dex.instructions.args.ArgType;
 import jadx.gui.treemodel.JMethod;
 import jadx.gui.treemodel.JNode;
-import jadx.gui.ui.codearea.ShowSignatureAction;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.util.List;
@@ -19,25 +17,34 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
+
 public class SignatureDialog extends JDialog {
 	private static final long serialVersionUID = -5480561835067709906L;
 	public static final String SPACE_2 = "  ";
 	public static final String SPACE_4 = "    ";
 	public static final String SPACE_6 = "      ";
 	public static final String COLON = ":";
-	public static final String LINE_SAPERATOR = "\n";
+	public static final String lineSeparator = "\n";
 	private final JNode node;
-	private static final Logger LOG = LoggerFactory.getLogger(ShowSignatureAction.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SignatureDialog.class);
+
+	private final JTextArea textArea = new JTextArea();
 
 	public SignatureDialog(MainWindow mainWindow, JNode node) {
 		super(mainWindow);
 		this.node = node;
 
+		textArea.setBorder(emptyBorder());
+		textArea.setCaretPosition(0);
+
+
 		String text = getText();
 
 		JPanel signature = signaturePanel();
-		JTextArea editText = editTextPanel(text);
-		JPanel buttons = buttonsPanel(text);
+		JScrollPane editText = editTextPanel();
+		JPanel buttons = buttonsPanel();
 
 		JPanel all = new JPanel();
 		all.setBorder(emptyBorder());
@@ -64,10 +71,10 @@ public class SignatureDialog extends JDialog {
 		mainWindow.getSettings().loadWindowPos(this);
 	}
 
-	private JTextArea editTextPanel(String text) {
-		JTextArea textArea = new JTextArea(text);
-		textArea.setBorder(emptyBorder());
-		return textArea;
+	private JScrollPane editTextPanel() {
+		textArea.setText(getText());
+		return new JScrollPane(textArea,
+				VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
 	}
 
 	private void registerKeyboard() {
@@ -80,7 +87,7 @@ public class SignatureDialog extends JDialog {
 
 	private JPanel signaturePanel() {
 		JLabel text = new JLabel("方法签名：");
-		JLabel signature = new JLabel(this.node.makeLongStringHtml(), this.node.getIcon(), SwingConstants.LEFT);
+		JLabel signature = new JLabel(node.makeLongStringHtml(), node.getIcon(), SwingConstants.LEFT);
 		text.setLabelFor(signature);
 
 		JPanel container = new JPanel();
@@ -101,23 +108,23 @@ public class SignatureDialog extends JDialog {
 			JavaMethod method = (JavaMethod) node.getJavaNode();
 
 			JavaClass declaringClass = method.getDeclaringClass();
-			sb.append("class").append(declaringClass.getName()).append(COLON).append(LINE_SAPERATOR)
-					.append(SPACE_2).append("name: ").append(getClassName(declaringClass)).append(LINE_SAPERATOR);
+			sb.append("class").append(declaringClass.getName()).append(COLON).append(lineSeparator)
+					.append(SPACE_2).append("name: ").append(getClassName(declaringClass)).append(lineSeparator);
 
 			if (method.isConstructor()) {
-				sb.append(SPACE_2).append("constructor").append(COLON).append(LINE_SAPERATOR)
-						.append(SPACE_4).append("isConstructor: true").append(LINE_SAPERATOR);
+				sb.append(SPACE_2).append("constructor").append(COLON).append(lineSeparator)
+						.append(SPACE_4).append("isConstructor: true").append(lineSeparator);
 			} else {
 				String name = method.getName();
-				sb.append(SPACE_2).append(name).append(COLON).append(LINE_SAPERATOR)
-						.append(SPACE_4).append("name: ").append(name).append(LINE_SAPERATOR);
+				sb.append(SPACE_2).append(name).append(COLON).append(lineSeparator)
+						.append(SPACE_4).append("name: ").append(name).append(lineSeparator);
 			}
 			sb.append(SPACE_4).append("params:");
 			List<ArgType> arguments = method.getArguments();
 			if (arguments.isEmpty()) {
 				sb.append(" []");
 			}
-			sb.append(LINE_SAPERATOR);
+			sb.append(lineSeparator);
 			for (ArgType argument : arguments) {
 				sb.append(SPACE_6).append("- ");
 				String param = argument.toString();
@@ -127,7 +134,7 @@ public class SignatureDialog extends JDialog {
 				} else {
 					sb.append(param);
 				}
-				sb.append(LINE_SAPERATOR);
+				sb.append(lineSeparator);
 			}
 
 		} else {
@@ -140,8 +147,8 @@ public class SignatureDialog extends JDialog {
 	/**
 	 * 内部类是用.表示关系的，需要替换为$表示
 	 *
-	 * @param javaClass
-	 * @return
+	 * @param javaClass -
+	 * @return -
 	 */
 	private String getClassName(JavaClass javaClass) {
 		JavaClass declaringClass = javaClass.getDeclaringClass();
@@ -152,16 +159,16 @@ public class SignatureDialog extends JDialog {
 		}
 	}
 
-	private JPanel buttonsPanel(final String text) {
+	private JPanel buttonsPanel() {
 		JButton okButton = new JButton("复制");
 		okButton.addActionListener(new AbstractAction() {
 			private static final long serialVersionUID = 9040667663098607812L;
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LOG.warn("文本：" + text);
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				clipboard.setContents(new StringSelection(text), null);
+				clipboard.setContents(new StringSelection(textArea.getText()), null);
+				dispose();
 			}
 		});
 		JButton cancelButton = new JButton("取消");
@@ -178,11 +185,6 @@ public class SignatureDialog extends JDialog {
 		buttons.add(cancelButton, BorderLayout.LINE_END);
 //		buttons.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		return buttons;
-	}
-
-	private void onOK() {
-		// add your code here
-		dispose();
 	}
 
 }

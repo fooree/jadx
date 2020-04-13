@@ -23,13 +23,8 @@ public final class ShowSignatureAction extends JNodeMenuAction<JNode> {
 			return;
 		}
 
-//		UsageDialog usageDialog = new UsageDialog(codeArea.getMainWindow(), node);
-//		usageDialog.setVisible(true);
-
-		LOG.warn("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		SignatureDialog dialog = new SignatureDialog(codeArea.getMainWindow(), node);
 		dialog.setVisible(true);
-		LOG.warn("--------------------------------");
 	}
 
 	@Nullable
