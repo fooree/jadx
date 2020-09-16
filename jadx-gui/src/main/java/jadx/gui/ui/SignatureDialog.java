@@ -5,18 +5,20 @@ import jadx.api.JavaMethod;
 import jadx.core.dex.instructions.args.ArgType;
 import jadx.gui.treemodel.JMethod;
 import jadx.gui.treemodel.JNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import static jadx.core.Consts.DEFAULT_PACKAGE_NAME;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
@@ -31,6 +33,8 @@ public class SignatureDialog extends JDialog {
 	private static final Logger LOG = LoggerFactory.getLogger(SignatureDialog.class);
 
 	private final JTextArea textArea = new JTextArea();
+	private int DEF_PACKAGE_LENGTH = DEFAULT_PACKAGE_NAME.length() + 1;
+
 
 	public SignatureDialog(MainWindow mainWindow, JNode node) {
 		super(mainWindow);
@@ -128,6 +132,7 @@ public class SignatureDialog extends JDialog {
 			for (ArgType argument : arguments) {
 				sb.append(SPACE_6).append("- ");
 				String param = argument.toString();
+				param = param.startsWith(DEFAULT_PACKAGE_NAME) ? param.substring(DEF_PACKAGE_LENGTH) : param;
 				int idx = param.indexOf("<");
 				if (idx > 0) {
 					sb.append(param, 0, idx);
@@ -153,7 +158,8 @@ public class SignatureDialog extends JDialog {
 	private String getClassName(JavaClass javaClass) {
 		JavaClass declaringClass = javaClass.getDeclaringClass();
 		if (declaringClass == null) {
-			return javaClass.getFullName();
+			final String name = javaClass.getFullName();
+			return name.startsWith(DEFAULT_PACKAGE_NAME) ? name.substring(DEF_PACKAGE_LENGTH) : name;
 		} else {
 			return getClassName(declaringClass) + '$' + javaClass.getName();
 		}
